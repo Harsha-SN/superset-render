@@ -1,0 +1,22 @@
+FROM apache/superset:6.0.0
+
+USER root
+
+RUN pip install --no-cache-dir \
+    shillelagh \
+    "shillelagh[genericjsonapi]"
+
+USER superset
+
+COPY superset_config.py /app/pythonpath/superset_config.py
+
+ENV SUPERSET_CONFIG_PATH=/app/pythonpath/superset_config.py
+
+ENV SUPERSET_LOAD_EXAMPLES=no
+
+ENV SUPERSET_WEBSERVER_WORKERS=1
+ENV SERVER_THREADS_AMOUNT=2
+
+EXPOSE 8088
+
+CMD ["gunicorn", "-w", "1", "-k", "gthread", "--threads", "2", "-b", "0.0.0.0:8088", "superset.app:create_app()"]
