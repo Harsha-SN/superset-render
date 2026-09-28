@@ -2,59 +2,31 @@ FROM apache/superset:6.1.0
 
 USER root
 
-# ============================================================
-# INSTALL THE SAME VERSIONS USED BY LOCAL SUPERSET
-# ============================================================
-
+# Install only the Shillelagh version used by the working local Superset.
+# Install into the Python environment used by Superset.
 RUN pip install --no-cache-dir \
     --target=/app/.venv/lib/python3.10/site-packages \
-    "shillelagh==1.4.5" \
-    "SQLAlchemy==1.4.54" \
-    "apsw==3.53.4.0" \
-    "yarl==1.24.5" \
-    "requests==2.34.2" \
-    "requests-cache==1.3.3" \
-    "python-jsonpath==2.2.1" \
-    "jsonpath-ng==1.8.0" \
-    "jsonpath==0.82.2"
+    --timeout 120 \
+    --retries 10 \
+    "shillelagh==1.4.5"
 
-# ============================================================
-# VERIFY VERSIONS
-# ============================================================
-
+# Verify Shillelagh
 RUN /app/.venv/bin/python -c \
-    "import shillelagh; print('Shillelagh:', shillelagh.__version__)"
+    "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
 
+# Verify Generic JSON adapter
 RUN /app/.venv/bin/python -c \
-    "import sqlalchemy; print('SQLAlchemy:', sqlalchemy.__version__)"
+    "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER: OK')"
 
-RUN /app/.venv/bin/python -c \
-    "import apsw; print('APSW:', apsw.apswversion())"
-
+# Verify dependencies
 RUN /app/.venv/bin/python -c \
     "import yarl; print('YARL:', yarl.__version__)"
 
 RUN /app/.venv/bin/python -c \
-    "import requests; print('Requests:', requests.__version__)"
+    "import requests; print('REQUESTS:', requests.__version__)"
 
 RUN /app/.venv/bin/python -c \
-    "import requests_cache; print('Requests-cache:', requests_cache.__version__)"
-
-RUN /app/.venv/bin/python -c \
-    "import jsonpath; print('JSONPATH:', jsonpath.__file__)"
-
-RUN /app/.venv/bin/python -c \
-    "import jsonpath_ng; print('JSONPATH-NG:', jsonpath_ng.__version__)"
-
-RUN /app/.venv/bin/python -c \
-    "import shillelagh.adapters.api.generic_json as g; print('Generic JSON:', g.__file__)"
-
-RUN /app/.venv/bin/python -c \
-    "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GenericJSONAPI: OK')"
-
-# ============================================================
-# SUPERSET CONFIGURATION
-# ============================================================
+    "import requests_cache; print('REQUESTS-CACHE:', requests_cache.__version__)"
 
 USER superset
 
@@ -66,9 +38,5 @@ ENV SUPERSET_WEBSERVER_WORKERS=1
 ENV SERVER_THREADS_AMOUNT=2
 
 EXPOSE 10000
-
-# ============================================================
-# START SUPERSET
-# ============================================================
 
 CMD ["sh", "-c", "superset db upgrade && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password \"$ADMIN_PASSWORD\" || true; superset init; gunicorn -w 1 -k gthread --threads 2 -b 0.0.0.0:${PORT:-10000} 'superset.app:create_app()'"]
