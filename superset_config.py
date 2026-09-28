@@ -1,12 +1,28 @@
 import os
 
+# ============================================================
+# SECRET KEY
+# ============================================================
+
 SECRET_KEY = os.getenv("SUPERSET_SECRET_KEY")
+
+# ============================================================
+# GUEST TOKEN
+# ============================================================
 
 GUEST_TOKEN_JWT_SECRET = os.getenv("GUEST_TOKEN_JWT_SECRET")
 
-SQLALCHEMY_DATABASE_URI = "sqlite:////app/superset_home/superset.db"
+ENABLE_GUEST_TOKEN = True
 
-PREVENT_UNSAFE_DB_CONNECTIONS = False
+GUEST_ROLE_NAME = "Gamma"
+
+PUBLIC_ROLE_LIKE = "Gamma"
+
+GUEST_TOKEN_JWT_AUDIENCE = "superset"
+
+# ============================================================
+# FEATURES
+# ============================================================
 
 FEATURE_FLAGS = {
     "EMBEDDED_SUPERSET": True,
@@ -14,12 +30,9 @@ FEATURE_FLAGS = {
     "DISABLE_EMBEDDED_SUPERSET_LOGOUT": True,
 }
 
-ENABLE_GUEST_TOKEN = True
-
-GUEST_ROLE_NAME = "Gamma"
-PUBLIC_ROLE_LIKE = "Gamma"
-
-GUEST_TOKEN_JWT_AUDIENCE = "superset"
+# ============================================================
+# CORS
+# ============================================================
 
 ENABLE_CORS = True
 
@@ -30,6 +43,10 @@ CORS_OPTIONS = {
     ],
 }
 
+# ============================================================
+# SECURITY / PROXY
+# ============================================================
+
 TALISMAN_ENABLED = False
 
 ENABLE_PROXY_FIX = True
@@ -39,4 +56,14 @@ PREFERRED_URL_SCHEME = "https"
 WTF_CSRF_ENABLED = False
 
 SESSION_COOKIE_SECURE = True
+
 SESSION_COOKIE_SAMESITE = "None"
+
+# ============================================================
+# DATABASE
+# ============================================================
+
+SQLALCHEMY_DATABASE_URI = "sqlite:////app/superset_home/superset.db"
+
+# Allow Shillelagh connections
+PREVENT_UNSAFE_DB_CONNECTIONS = False
