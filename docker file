@@ -2,18 +2,16 @@ FROM apache/superset:6.0.0
 
 USER root
 
-# Install Shillelagh and Generic JSON API adapter
 RUN pip install --no-cache-dir \
-    shillelagh \
-    "shillelagh[genericjsonapi]"
+    "shillelagh[genericjsonapi]" \
+    "jsonpath==0.82.2"
 
-# Verify that Shillelagh and Generic JSON API adapter are installed
 RUN python -c "import shillelagh; print('SHILLELAGH OK')" && \
+    python -c "import jsonpath; print('JSONPATH OK')" && \
     python -c "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER OK')"
 
 USER superset
 
-# Superset configuration
 COPY superset_config.py /app/pythonpath/superset_config.py
 
 ENV SUPERSET_CONFIG_PATH=/app/pythonpath/superset_config.py
@@ -23,5 +21,4 @@ ENV SERVER_THREADS_AMOUNT=2
 
 EXPOSE 10000
 
-# Initialize Superset and start Gunicorn
 CMD ["sh", "-c", "superset db upgrade && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password \"$ADMIN_PASSWORD\" || true; superset init; gunicorn -w 1 -k gthread --threads 2 -b 0.0.0.0:${PORT:-10000} 'superset.app:create_app()'"]
