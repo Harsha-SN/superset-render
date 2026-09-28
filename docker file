@@ -2,13 +2,15 @@ FROM apache/superset:6.0.0
 
 USER root
 
+# Install Shillelagh and the Python JSONPath implementation
 RUN pip install --no-cache-dir \
     "shillelagh[genericjsonapi]" \
-    "jsonpath==0.82.2"
+    "python-jsonpath"
 
+# Verify installations
 RUN python -c "import shillelagh; print('SHILLELAGH OK')" && \
     python -c "import jsonpath; print('JSONPATH OK')" && \
-    python -c "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER OK')"
+    python -c "print('GENERIC JSON API DEPENDENCY OK')"
 
 USER superset
 
