@@ -1,55 +1,42 @@
-FROM apache/superset:6.1.0
+import os
 
-USER root
+SECRET_KEY = os.getenv("SUPERSET_SECRET_KEY")
 
-# Install Shillelagh
-RUN pip install --no-cache-dir \
-    --target=/app/.venv/lib/python3.10/site-packages \
-    --timeout 120 \
-    --retries 10 \
-    "shillelagh==1.4.5"
+GUEST_TOKEN_JWT_SECRET = os.getenv("GUEST_TOKEN_JWT_SECRET")
 
-# Shillelagh Generic JSON adapter requires this package
-RUN pip install --no-cache-dir \
-    --target=/app/.venv/lib/python3.10/site-packages \
-    --timeout 120 \
-    --retries 10 \
-    "jsonpath==0.82.2"
+SQLALCHEMY_DATABASE_URI = "sqlite:////app/superset_home/superset.db"
 
-# Generic JSON adapter requires yarl
-RUN pip install --no-cache-dir \
-    --target=/app/.venv/lib/python3.10/site-packages \
-    --timeout 120 \
-    --retries 10 \
-    "yarl==1.24.5"
+PREVENT_UNSAFE_DB_CONNECTIONS = False
 
+FEATURE_FLAGS = {
+    "EMBEDDED_SUPERSET": True,
+    "EMBEDDABLE_CHARTS": True,
+    "DISABLE_EMBEDDED_SUPERSET_LOGOUT": True,
+}
 
-# -------------------------
-# VERIFY INSTALLATION
-# -------------------------
+ENABLE_GUEST_TOKEN = True
 
-RUN /app/.venv/bin/python -c \
-    "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
+GUEST_ROLE_NAME = "Gamma"
+PUBLIC_ROLE_LIKE = "Gamma"
 
-RUN /app/.venv/bin/python -c \
-    "import jsonpath; print('JSONPATH:', jsonpath.__file__)"
+GUEST_TOKEN_JWT_AUDIENCE = "superset"
 
-RUN /app/.venv/bin/python -c \
-    "import yarl; print('YARL VERSION:', yarl.__version__)"
+ENABLE_CORS = True
 
-RUN /app/.venv/bin/python -c \
-    "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER: OK')"
+CORS_OPTIONS = {
+    "supports_credentials": True,
+    "origins": [
+        "https://data-analytics-ui.streamlit.app"
+    ],
+}
 
+TALISMAN_ENABLED = False
 
-USER superset
+ENABLE_PROXY_FIX = True
 
-COPY superset_config.py /app/pythonpath/superset_config.py
+PREFERRED_URL_SCHEME = "https"
 
-ENV SUPERSET_CONFIG_PATH=/app/pythonpath/superset_config.py
-ENV SUPERSET_LOAD_EXAMPLES=no
-ENV SUPERSET_WEBSERVER_WORKERS=1
-ENV SERVER_THREADS_AMOUNT=2
+WTF_CSRF_ENABLED = False
 
-EXPOSE 10000
-
-CMD ["sh", "-c", "superset db upgrade && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password \"$ADMIN_PASSWORD\" || true; superset init; gunicorn -w 1 -k gthread --threads 2 -b 0.0.0.0:${PORT:-10000} 'superset.app:create_app()'"]
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "None"
