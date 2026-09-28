@@ -1,83 +1,36 @@
-# ============================================================
-# SECRET KEY
-# ============================================================
-import os
-SECRET_KEY = SECRET_KEY = os.getenv("SUPERSET_SECRET_KEY")
+FROM apache/superset:6.1.0
 
+USER root
 
-# ============================================================
-# METADATA DATABASE
-# ============================================================
+# Install Shillelagh with the Generic JSON API extra (pulls the correct dependencies)
+RUN pip install --no-cache-dir \
+    --target=/app/.venv/lib/python3.10/site-packages \
+    --timeout 120 \
+    --retries 10 \
+    "shillelagh[genericjsonapi]==1.4.5"
 
-SQLALCHEMY_DATABASE_URI = "sqlite:////app/superset_home/superset.db"
+# Make sure the correct jsonpath library is present (same one as your local venv)
+RUN pip install --no-cache-dir \
+    --target=/app/.venv/lib/python3.10/site-packages \
+    --timeout 120 \
+    --retries 10 \
+    "python-jsonpath==2.2.1"
 
+# Verify with the same interpreter Superset uses (the build fails here if the adapter can't load)
+RUN /app/.venv/bin/python -c "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
+RUN /app/.venv/bin/python -c "import jsonpath; print('JSONPATH FILE:', jsonpath.__file__)"
+RUN /app/.venv/bin/python -c "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER: OK')"
 
-# ============================================================
-# DATABASE CONNECTION SECURITY
-# ============================================================
+USER superset
 
-PREVENT_UNSAFE_DB_CONNECTIONS = False
+COPY superset_config.py /app/pythonpath/superset_config.py
 
+ENV SUPERSET_CONFIG_PATH=/app/pythonpath/superset_config.py
+ENV SUPERSET_LOAD_EXAMPLES=no
+ENV SUPERSET_WEBSERVER_WORKERS=1
+ENV SERVER_THREADS_AMOUNT=2
 
-# ============================================================
-# EMBEDDED SUPERSET
-# ============================================================
+EXPOSE 10000
 
-FEATURE_FLAGS = {
-    "EMBEDDED_SUPERSET": True,
-    "EMBEDDABLE_CHARTS": True,
-    "DISABLE_EMBEDDED_SUPERSET_LOGOUT": True,
-}
-
-ENABLE_GUEST_TOKEN = True
-
-GUEST_ROLE_NAME = "Gamma"
-
-PUBLIC_ROLE_LIKE = "Gamma"
-
-GUEST_TOKEN_JWT_AUDIENCE = "superset"
-
-
-# ============================================================
-# GUEST TOKEN SECRET
-# ============================================================
-
-GUEST_TOKEN_JWT_SECRET = os.getenv(
-    "GUEST_TOKEN_JWT_SECRET"
-)
-
-
-# ============================================================
-# CORS
-# ============================================================
-
-ENABLE_CORS = True
-
-CORS_OPTIONS = {
-    "supports_credentials": True,
-    "origins": [
-        "https://data-analytics-ui.streamlit.app",
-    ],
-}
-
-
-# ============================================================
-# SECURITY / PROXY
-# ============================================================
-
-TALISMAN_ENABLED = False
-
-ENABLE_PROXY_FIX = True
-
-PREFERRED_URL_SCHEME = "https"
-
-WTF_CSRF_ENABLED = False
-
-
-# ============================================================
-# SESSION
-# ============================================================
-
-SESSION_COOKIE_SECURE = True
-
-SESSION_COOKIE_SAMESITE = "None"
+# set-database-uri recreates the Shillelagh connection on every boot (your SQLite DB is wiped on each deploy)
+CMD ["sh", "-c", "superset db upgrade && (superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com
