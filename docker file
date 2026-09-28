@@ -2,31 +2,31 @@ FROM apache/superset:6.1.0
 
 USER root
 
-# Install only the Shillelagh version used by the working local Superset.
-# Install into the Python environment used by Superset.
+# Install Shillelagh
 RUN pip install --no-cache-dir \
     --target=/app/.venv/lib/python3.10/site-packages \
     --timeout 120 \
     --retries 10 \
     "shillelagh==1.4.5"
 
+# Install the dependency required by Generic JSON API
+RUN pip install --no-cache-dir \
+    --target=/app/.venv/lib/python3.10/site-packages \
+    --timeout 120 \
+    --retries 10 \
+    "jsonpath==0.82.2"
+
 # Verify Shillelagh
 RUN /app/.venv/bin/python -c \
     "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
 
+# Verify jsonpath
+RUN /app/.venv/bin/python -c \
+    "import jsonpath; print('JSONPATH: OK')"
+
 # Verify Generic JSON adapter
 RUN /app/.venv/bin/python -c \
     "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER: OK')"
-
-# Verify dependencies
-RUN /app/.venv/bin/python -c \
-    "import yarl; print('YARL:', yarl.__version__)"
-
-RUN /app/.venv/bin/python -c \
-    "import requests; print('REQUESTS:', requests.__version__)"
-
-RUN /app/.venv/bin/python -c \
-    "import requests_cache; print('REQUESTS-CACHE:', requests_cache.__version__)"
 
 USER superset
 
