@@ -3,40 +3,61 @@ FROM apache/superset:6.0.0
 USER root
 
 # ============================================================
-# INSTALL SHILLELAGH GENERIC JSON API
+# INSTALL GENERIC JSON API SUPPORT
 # ============================================================
 
-RUN /app/.venv/bin/python -m ensurepip --upgrade || true
-
-RUN /app/.venv/bin/python -m pip install --no-cache-dir \
+RUN pip install --no-cache-dir \
     "shillelagh[genericjsonapi]==1.4.3" \
     "jsonpath==0.82.2"
 
 
 # ============================================================
-# VERIFY INSTALLATION
+# VERIFY SHILLELAGH INSTALLATION
 # ============================================================
 
-RUN /app/.venv/bin/python -c \
-    "import shillelagh; print('SHILLELAGH:', shillelagh.__version__)"
+RUN /app/.venv/bin/python -c "\
+import shillelagh; \
+print('SHILLELAGH VERSION:', shillelagh.__version__)"
 
-RUN /app/.venv/bin/python -c \
-    "import jsonpath; print('JSONPATH:', jsonpath.__file__)"
+RUN /app/.venv/bin/python -c "\
+import jsonpath; \
+print('JSONPATH:', jsonpath.__file__)"
 
-RUN /app/.venv/bin/python -c \
-    "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API: OK')"
-
-
-# ============================================================
-# TEST SQLALCHEMY DIALECT
-# ============================================================
-
-RUN /app/.venv/bin/python -c \
-    "from sqlalchemy import create_engine; create_engine('shillelagh+safe://'); print('SHILLELAGH DIALECT: OK')"
+RUN /app/.venv/bin/python -c "\
+from shillelagh.adapters.api.generic_json import GenericJSONAPI; \
+print('GENERIC JSON API: OK')"
 
 
 # ============================================================
-# SUPERSET CONFIG
+# TEST RENDER API FROM INSIDE THE CONTAINER
+# ============================================================
+
+RUN /app/.venv/bin/python -c "\
+import requests; \
+url='https://analytics-api-82mg.onrender.com/api/product-performance/categories'; \
+r=requests.head(url); \
+print('=== RENDER API TEST ==='); \
+print('STATUS:', r.status_code); \
+print('CONTENT-TYPE:', r.headers.get('content-type')); \
+print('CACHE-CONTROL:', r.headers.get('cache-control')); \
+print('=======================')"
+
+
+# ============================================================
+# TEST SHILLELAGH DIALECT
+# ============================================================
+
+RUN /app/.venv/bin/python -c "\
+from sqlalchemy import create_engine; \
+engine=create_engine('shillelagh+safe://'); \
+print('=== DIALECT TEST ==='); \
+print('ENGINE:', engine); \
+print('DIALECT:', engine.dialect); \
+print('====================')"
+
+
+# ============================================================
+# SUPERSET CONFIGURATION
 # ============================================================
 
 USER superset
