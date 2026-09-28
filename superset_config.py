@@ -1,8 +1,8 @@
 # ============================================================
 # SECRET KEY
 # ============================================================
-
-SECRET_KEY = "my-superset-secret-key-2026-change-this-to-a-long-random-value"
+import os
+SECRET_KEY = SECRET_KEY = os.getenv("SUPERSET_SECRET_KEY")
 
 
 # ============================================================
@@ -42,7 +42,9 @@ GUEST_TOKEN_JWT_AUDIENCE = "superset"
 # GUEST TOKEN SECRET
 # ============================================================
 
-GUEST_TOKEN_JWT_SECRET = "superset"
+GUEST_TOKEN_JWT_SECRET = os.getenv(
+    "GUEST_TOKEN_JWT_SECRET"
+)
 
 
 # ============================================================
