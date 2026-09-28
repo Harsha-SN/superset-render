@@ -1,18 +1,27 @@
-FROM apache/superset:6.1.0
+FROM apache/superset:6.0.0
 
 USER root
 
-# Install Shillelagh and Generic JSON API dependencies
 RUN pip install --no-cache-dir \
     --target=/app/.venv/lib/python3.10/site-packages \
-    "shillelagh[genericjsonapi]" \
+    "shillelagh[genericjsonapi]==1.4.5" \
     "jsonpath==0.82.2"
 
-# Verify packages using Superset's Python environment
-RUN /app/.venv/bin/python -c "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)" && \
-    /app/.venv/bin/python -c "import jsonpath; print('JSONPATH OK:', jsonpath.__file__)" && \
-    /app/.venv/bin/python -c "import yarl; print('YARL OK:', yarl.__version__)" && \
-    /app/.venv/bin/python -c "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER OK')"
+# ------------------------------------------------------------
+# VERIFY SHILLELAGH
+# ------------------------------------------------------------
+
+RUN /app/.venv/bin/python -c "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
+
+RUN /app/.venv/bin/python -c "import jsonpath; print('JSONPATH:', jsonpath.__file__)"
+
+RUN /app/.venv/bin/python -c "import yarl; print('YARL:', yarl.__version__)"
+
+RUN /app/.venv/bin/python -c "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API: OK')"
+
+# ------------------------------------------------------------
+# SUPERSET CONFIG
+# ------------------------------------------------------------
 
 USER superset
 
