@@ -3,33 +3,34 @@ FROM apache/superset:6.0.0
 USER root
 
 # ============================================================
-# INSTALL GENERIC JSON API SUPPORT
+# INSTALL SHILLELAGH INTO SUPERSET'S PYTHON ENVIRONMENT
 # ============================================================
 
 RUN pip install --no-cache-dir \
+    --target=/app/.venv/lib/python3.10/site-packages \
     "shillelagh[genericjsonapi]==1.4.3" \
     "jsonpath==0.82.2"
 
 
 # ============================================================
-# VERIFY SHILLELAGH INSTALLATION
+# VERIFY SHILLELAGH
 # ============================================================
 
-RUN /app/.venv/bin/python -c "\
-import shillelagh; \
-print('SHILLELAGH VERSION:', shillelagh.__version__)"
+RUN /app/.venv/bin/python -c \
+    "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
 
-RUN /app/.venv/bin/python -c "\
-import jsonpath; \
-print('JSONPATH:', jsonpath.__file__)"
+RUN /app/.venv/bin/python -c \
+    "import jsonpath; print('JSONPATH:', jsonpath.__file__)"
 
-RUN /app/.venv/bin/python -c "\
-from shillelagh.adapters.api.generic_json import GenericJSONAPI; \
-print('GENERIC JSON API: OK')"
+RUN /app/.venv/bin/python -c \
+    "import yarl; print('YARL:', yarl.__version__)"
+
+RUN /app/.venv/bin/python -c \
+    "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API: OK')"
 
 
 # ============================================================
-# TEST RENDER API FROM INSIDE THE CONTAINER
+# TEST RENDER API FROM INSIDE SUPERSET CONTAINER
 # ============================================================
 
 RUN /app/.venv/bin/python -c "\
@@ -44,7 +45,7 @@ print('=======================')"
 
 
 # ============================================================
-# TEST SHILLELAGH DIALECT
+# TEST SHILLELAGH SQLALCHEMY DIALECT
 # ============================================================
 
 RUN /app/.venv/bin/python -c "\
@@ -57,7 +58,7 @@ print('====================')"
 
 
 # ============================================================
-# SUPERSET CONFIGURATION
+# SUPERSET CONFIG
 # ============================================================
 
 USER superset
