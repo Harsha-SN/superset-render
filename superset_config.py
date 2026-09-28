@@ -2,24 +2,44 @@ FROM apache/superset:6.1.0
 
 USER root
 
-# Install Shillelagh with the Generic JSON API extra (pulls the correct dependencies)
+# Install Shillelagh
 RUN pip install --no-cache-dir \
     --target=/app/.venv/lib/python3.10/site-packages \
     --timeout 120 \
     --retries 10 \
-    "shillelagh[genericjsonapi]==1.4.5"
+    "shillelagh==1.4.5"
 
-# Make sure the correct jsonpath library is present (same one as your local venv)
+# Shillelagh Generic JSON adapter requires this package
 RUN pip install --no-cache-dir \
     --target=/app/.venv/lib/python3.10/site-packages \
     --timeout 120 \
     --retries 10 \
-    "python-jsonpath==2.2.1"
+    "jsonpath==0.82.2"
 
-# Verify with the same interpreter Superset uses (the build fails here if the adapter can't load)
-RUN /app/.venv/bin/python -c "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
-RUN /app/.venv/bin/python -c "import jsonpath; print('JSONPATH FILE:', jsonpath.__file__)"
-RUN /app/.venv/bin/python -c "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER: OK')"
+# Generic JSON adapter requires yarl
+RUN pip install --no-cache-dir \
+    --target=/app/.venv/lib/python3.10/site-packages \
+    --timeout 120 \
+    --retries 10 \
+    "yarl==1.24.5"
+
+
+# -------------------------
+# VERIFY INSTALLATION
+# -------------------------
+
+RUN /app/.venv/bin/python -c \
+    "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
+
+RUN /app/.venv/bin/python -c \
+    "import jsonpath; print('JSONPATH:', jsonpath.__file__)"
+
+RUN /app/.venv/bin/python -c \
+    "import yarl; print('YARL VERSION:', yarl.__version__)"
+
+RUN /app/.venv/bin/python -c \
+    "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER: OK')"
+
 
 USER superset
 
@@ -32,5 +52,4 @@ ENV SERVER_THREADS_AMOUNT=2
 
 EXPOSE 10000
 
-# set-database-uri recreates the Shillelagh connection on every boot (your SQLite DB is wiped on each deploy)
-CMD ["sh", "-c", "superset db upgrade && (superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com
+CMD ["sh", "-c", "superset db upgrade && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password \"$ADMIN_PASSWORD\" || true; superset init; gunicorn -w 1 -k gthread --threads 2 -b 0.0.0.0:${PORT:-10000} 'superset.app:create_app()'"]
