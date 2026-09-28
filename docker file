@@ -2,198 +2,44 @@ FROM apache/superset:6.1.0
 
 USER root
 
-# ============================================================
-# 1. Install Shillelagh
-# ============================================================
+# Install Shillelagh Generic JSON API
+RUN uv pip install --python /app/.venv/bin/python --no-cache \
+    "shillelagh[genericjsonapi]==1.4.5"
 
-RUN pip install --no-cache-dir \
-    --target=/app/.venv/lib/python3.10/site-packages \
-    --timeout 120 \
-    --retries 10 \
-    "shillelagh==1.4.5"
-
-
-# ============================================================
-# 2. Install Generic JSON API dependencies
-# ============================================================
-
-RUN pip install --no-cache-dir \
-    --target=/app/.venv/lib/python3.10/site-packages \
-    --timeout 120 \
-    --retries 10 \
-    "jsonpath==0.82.2"
-
-RUN pip install --no-cache-dir \
-    --target=/app/.venv/lib/python3.10/site-packages \
-    --timeout 120 \
-    --retries 10 \
-    "yarl==1.24.5"
-
-
-# ============================================================
-# 3. CHECK PYTHON VERSION
-# ============================================================
-
+# Verify Shillelagh
 RUN /app/.venv/bin/python -c \
-    "import sys; print('========================================'); print('PYTHON EXECUTABLE:', sys.executable); print('PYTHON VERSION:', sys.version); print('========================================')"
+    "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
 
-
-# ============================================================
-# 4. CHECK SHILLELAGH
-# ============================================================
-
+# Verify Generic JSON adapter
 RUN /app/.venv/bin/python -c \
-    "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__); print('SHILLELAGH PATH:', shillelagh.__file__)"
+    "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER: OK')"
 
-
-# ============================================================
-# 5. CHECK JSONPATH
-# ============================================================
-
+# Verify JSONPath
 RUN /app/.venv/bin/python -c \
-    "import jsonpath; print('JSONPATH PATH:', jsonpath.__file__)"
+    "import jsonpath; print('JSONPATH: OK')"
 
-
-# ============================================================
-# 6. CHECK YARL
-# ============================================================
-
+# Verify YARL
 RUN /app/.venv/bin/python -c \
-    "import yarl; print('YARL VERSION:', yarl.__version__); print('YARL PATH:', yarl.__file__)"
+    "import yarl; print('YARL:', yarl.__version__)"
 
-
-# ============================================================
-# 7. CHECK GENERIC JSON API ADAPTER
-# ============================================================
-
+# Verify API connectivity
 RUN /app/.venv/bin/python -c \
-    "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('========================================'); print('GENERIC JSON API ADAPTER: OK'); print('========================================')"
+    "import requests; r=requests.get('https://analytics-api-82mg.onrender.com/api/product-performance/categories', timeout=30); print('API STATUS:', r.status_code); print('API CONTENT TYPE:', r.headers.get('content-type')); r.raise_for_status()"
 
+# Verify Shillelagh dialect
+RUN /app/.venv/bin/python -c \
+    "from sqlalchemy import create_engine; engine=create_engine('shillelagh+safe://'); print('SHILLELAGH DIALECT:', engine.dialect)"
 
-# ============================================================
-# 8. TEST INTERNET/API CONNECTIVITY
-# ============================================================
-
-RUN /app/.venv/bin/python - <<'PY'
-import requests
-
-url = "https://analytics-api-82mg.onrender.com/api/product-performance/categories"
-
-print("========================================")
-print("TESTING ANALYTICS API")
-print("URL:", url)
-
-try:
-    response = requests.get(url, timeout=30)
-
-    print("HTTP STATUS:", response.status_code)
-    print("CONTENT TYPE:", response.headers.get("content-type"))
-    print("RESPONSE:", response.text[:1000])
-
-    response.raise_for_status()
-
-    print("ANALYTICS API TEST: OK")
-
-except Exception as e:
-    print("ANALYTICS API TEST: FAILED")
-    print("ERROR TYPE:", type(e).__name__)
-    print("ERROR:", str(e))
-    raise
-PY
-
-
-# ============================================================
-# 9. TEST SHILLELAGH DIRECTLY
-# ============================================================
-
-RUN /app/.venv/bin/python - <<'PY'
-from sqlalchemy import create_engine, text
-
-URL = "https://analytics-api-82mg.onrender.com/api/product-performance/categories"
-
-print("========================================")
-print("TESTING SHILLELAGH DIRECTLY")
-print("========================================")
-
-try:
-
-    engine = create_engine(
-        "shillelagh://",
-        connect_args={
-            "adapters": [
-                "genericjsonapi"
-            ]
-        }
-    )
-
-    print("SHILLELAGH ENGINE: CREATED")
-
-    with engine.connect() as connection:
-
-        print("SHILLELAGH CONNECTION: CREATED")
-
-        query = text(
-            f'SELECT * FROM "{URL}"'
-        )
-
-        result = connection.execute(query)
-
-        rows = result.fetchall()
-
-        print("NUMBER OF ROWS:", len(rows))
-
-        for row in rows[:3]:
-            print("ROW:", row)
-
-        print("========================================")
-        print("SHILLELAGH API TEST: PASSED")
-        print("========================================")
-
-except Exception as e:
-
-    print("========================================")
-    print("SHILLELAGH API TEST: FAILED")
-    print("ERROR TYPE:", type(e).__name__)
-    print("ERROR:", str(e))
-    print("========================================")
-
-    raise
-PY
-
-
-# ============================================================
-# 10. COPY SUPERSET CONFIGURATION
-# ============================================================
-
+# Copy Superset configuration
 COPY superset_config.py /app/pythonpath/superset_config.py
 
-
-# ============================================================
-# 11. SUPERSET ENVIRONMENT
-# ============================================================
+USER superset
 
 ENV SUPERSET_CONFIG_PATH=/app/pythonpath/superset_config.py
 ENV SUPERSET_LOAD_EXAMPLES=no
 ENV SUPERSET_WEBSERVER_WORKERS=1
 ENV SERVER_THREADS_AMOUNT=2
 
-
-# ============================================================
-# 12. SWITCH BACK TO SUPERSET USER
-# ============================================================
-
-USER superset
-
-
-# ============================================================
-# 13. PORT
-# ============================================================
-
 EXPOSE 10000
-
-
-# ============================================================
-# 14. START SUPERSET
-# ============================================================
 
 CMD ["sh", "-c", "superset db upgrade && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password \"$ADMIN_PASSWORD\" || true; superset init; gunicorn -w 1 -k gthread --threads 2 -b 0.0.0.0:${PORT:-10000} 'superset.app:create_app()'"]
