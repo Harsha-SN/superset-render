@@ -1,65 +1,18 @@
-FROM apache/superset:6.0.0
+FROM apache/superset:6.1.0
 
 USER root
 
-# ============================================================
-# INSTALL SHILLELAGH INTO SUPERSET'S PYTHON ENVIRONMENT
-# ============================================================
-
+# Install Shillelagh and Generic JSON API dependencies
 RUN pip install --no-cache-dir \
     --target=/app/.venv/lib/python3.10/site-packages \
-    "shillelagh[genericjsonapi]==1.4.3" \
+    "shillelagh[genericjsonapi]" \
     "jsonpath==0.82.2"
 
-
-# ============================================================
-# VERIFY SHILLELAGH
-# ============================================================
-
-RUN /app/.venv/bin/python -c \
-    "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
-
-RUN /app/.venv/bin/python -c \
-    "import jsonpath; print('JSONPATH:', jsonpath.__file__)"
-
-RUN /app/.venv/bin/python -c \
-    "import yarl; print('YARL:', yarl.__version__)"
-
-RUN /app/.venv/bin/python -c \
-    "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API: OK')"
-
-
-# ============================================================
-# TEST RENDER API FROM INSIDE SUPERSET CONTAINER
-# ============================================================
-
-RUN /app/.venv/bin/python -c "\
-import requests; \
-url='https://analytics-api-82mg.onrender.com/api/product-performance/categories'; \
-r=requests.head(url); \
-print('=== RENDER API TEST ==='); \
-print('STATUS:', r.status_code); \
-print('CONTENT-TYPE:', r.headers.get('content-type')); \
-print('CACHE-CONTROL:', r.headers.get('cache-control')); \
-print('=======================')"
-
-
-# ============================================================
-# TEST SHILLELAGH SQLALCHEMY DIALECT
-# ============================================================
-
-RUN /app/.venv/bin/python -c "\
-from sqlalchemy import create_engine; \
-engine=create_engine('shillelagh+safe://'); \
-print('=== DIALECT TEST ==='); \
-print('ENGINE:', engine); \
-print('DIALECT:', engine.dialect); \
-print('====================')"
-
-
-# ============================================================
-# SUPERSET CONFIG
-# ============================================================
+# Verify packages using Superset's Python environment
+RUN /app/.venv/bin/python -c "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)" && \
+    /app/.venv/bin/python -c "import jsonpath; print('JSONPATH OK:', jsonpath.__file__)" && \
+    /app/.venv/bin/python -c "import yarl; print('YARL OK:', yarl.__version__)" && \
+    /app/.venv/bin/python -c "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER OK')"
 
 USER superset
 
@@ -71,10 +24,5 @@ ENV SUPERSET_WEBSERVER_WORKERS=1
 ENV SERVER_THREADS_AMOUNT=2
 
 EXPOSE 10000
-
-
-# ============================================================
-# START SUPERSET
-# ============================================================
 
 CMD ["sh", "-c", "superset db upgrade && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password \"$ADMIN_PASSWORD\" || true; superset init; gunicorn -w 1 -k gthread --threads 2 -b 0.0.0.0:${PORT:-10000} 'superset.app:create_app()'"]
