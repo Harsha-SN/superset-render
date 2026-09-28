@@ -6,18 +6,13 @@ RUN pip install --no-cache-dir \
     shillelagh \
     "shillelagh[genericjsonapi]"
 
-COPY superset_config.py /app/pythonpath/superset_config.py
-COPY start.sh /app/start.sh
+USER superset
 
-RUN chmod +x /app/start.sh
+COPY superset_config.py /app/pythonpath/superset_config.py
 
 ENV SUPERSET_CONFIG_PATH=/app/pythonpath/superset_config.py
 ENV SUPERSET_LOAD_EXAMPLES=no
 ENV SUPERSET_WEBSERVER_WORKERS=1
 ENV SERVER_THREADS_AMOUNT=2
 
-USER superset
-
-EXPOSE 10000
-
-CMD ["/app/start.sh"]
+CMD ["sh", "-c", "gunicorn -w 1 -k gthread --threads 2 -b 0.0.0.0:${PORT:-10000} 'superset.app:create_app()'"]
