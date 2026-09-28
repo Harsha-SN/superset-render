@@ -2,18 +2,16 @@ FROM apache/superset:6.0.0
 
 USER root
 
-# Install Shillelagh Generic JSON API adapter
-RUN pip install --no-cache-dir \
-    "shillelagh[genericjsonapi]"
-
-# Install the jsonpath package expected by Shillelagh
+# Install Shillelagh and its Generic JSON API dependencies
 RUN pip install --no-cache-dir \
     --target=/app/.venv/lib/python3.10/site-packages \
+    "shillelagh[genericjsonapi]" \
     "jsonpath==0.82.2"
 
-# Verify using Superset's Python
+# Verify everything using the Python environment used by Superset
 RUN /app/.venv/bin/python -c "import shillelagh; print('SHILLELAGH OK')" && \
     /app/.venv/bin/python -c "import jsonpath; print('JSONPATH OK')" && \
+    /app/.venv/bin/python -c "import yarl; print('YARL OK')" && \
     /app/.venv/bin/python -c "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER OK')"
 
 USER superset
