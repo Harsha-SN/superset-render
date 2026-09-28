@@ -2,18 +2,16 @@ FROM apache/superset:6.0.0
 
 USER root
 
-# Install Shillelagh and Generic JSON API support
-# directly into Superset's Python virtual environment
+# Install the Shillelagh version used by Superset 6.0.x
 RUN uv pip install --python /app/.venv/bin/python \
-    "shillelagh[genericjsonapi]" \
+    "shillelagh[all]==1.4.3" \
     "jsonpath==0.82.2"
 
-# Verify the SAME environment Superset uses
-RUN /app/.venv/bin/python -c "import shillelagh; print('SHILLELAGH OK')" && \
+# Verify the SAME Python environment used by Superset
+RUN /app/.venv/bin/python -c "import shillelagh; print('SHILLELAGH:', shillelagh.__version__)" && \
     /app/.venv/bin/python -c "import jsonpath; print('JSONPATH OK')" && \
-    /app/.venv/bin/python -c "import yarl; print('YARL OK')" && \
-    /app/.venv/bin/python -c "import apsw; print('APSW OK')" && \
-    /app/.venv/bin/python -c "from sqlalchemy import create_engine; engine = create_engine('shillelagh://'); print('SHILLELAGH SQLALCHEMY DRIVER OK')"
+    /app/.venv/bin/python -c "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API OK')" && \
+    /app/.venv/bin/python -c "from sqlalchemy import create_engine; create_engine('shillelagh://'); print('SQLALCHEMY SHILLELAGH OK')"
 
 USER superset
 
