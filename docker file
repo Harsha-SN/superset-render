@@ -3,10 +3,28 @@ FROM apache/superset:6.1.0
 USER root
 
 RUN uv pip install --python /app/.venv/bin/python --no-cache --force-reinstall \
-    "shillelagh[genericjsonapi]==1.4.5" "prison>=0.2.1" "python-jsonpath>=0.10.3" "yarl>=1.8.1"
+    "shillelagh[genericjsonapi]==1.4.5" \
+    "prison>=0.2.1" \
+    "python-jsonpath>=0.10.3" \
+    "yarl>=1.8.1"
 
 RUN uv pip install --python /app/.venv/bin/python --no-cache \
     "sqlalchemy==1.4.54"
+
+# ------------------------------------------------------------
+# CREATE WRITABLE CACHE DIRECTORY
+# ------------------------------------------------------------
+
+RUN mkdir -p /tmp/shillelagh-cache \
+    && chown -R superset:superset /tmp/shillelagh-cache
+
+# Make temporary/cache locations writable
+ENV HOME=/tmp
+ENV XDG_CACHE_HOME=/tmp
+
+# ------------------------------------------------------------
+# VERIFY PACKAGES
+# ------------------------------------------------------------
 
 RUN /app/.venv/bin/python -c \
     "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
@@ -20,8 +38,16 @@ RUN /app/.venv/bin/python -c \
 RUN /app/.venv/bin/python -c \
     "import yarl; print('YARL:', yarl.__version__)"
 
+# ------------------------------------------------------------
+# COPY FILES
+# ------------------------------------------------------------
+
 COPY superset_config.py /app/pythonpath/superset_config.py
 COPY diag.py /app/diag.py
+
+# ------------------------------------------------------------
+# RUN AS SUPERSET USER
+# ------------------------------------------------------------
 
 USER superset
 
@@ -32,4 +58,16 @@ ENV SERVER_THREADS_AMOUNT=2
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "/app/.venv/bin/python /app/diag.py; superset db upgrade && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password \"$ADMIN_PASSWORD\" || true; superset init; gunicorn -w 1 -k gthread --threads 2 -b 0.0.0.0:${PORT:-10000} 'superset.app:create_app()'"]
+CMD ["sh", "-c", \
+"/app/.venv/bin/python /app/diag.py; \
+superset db upgrade && \
+superset fab create-admin \
+--username admin \
+--firstname Superset \
+--lastname Admin \
+--email admin@example.com \
+--password \"$ADMIN_PASSWORD\" || true; \
+superset init; \
+gunicorn -w 1 -k gthread --threads 2 \
+-b 0.0.0.0:${PORT:-10000} \
+'superset.app:create_app()'"]
