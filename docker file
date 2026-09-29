@@ -30,6 +30,8 @@ RUN mkdir -p /tmp/shillelagh-cache \
 ENV HOME=/tmp
 ENV XDG_CACHE_HOME=/tmp
 
+USER superset
+
 COPY superset_config.py /app/pythonpath/superset_config.py
 COPY diag.py /app/diag.py
 
