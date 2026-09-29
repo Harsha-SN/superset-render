@@ -6,7 +6,17 @@ import os
 
 SECRET_KEY = os.getenv("SUPERSET_SECRET_KEY")
 
+if not SECRET_KEY:
+    SECRET_KEY = "change-this-in-render"
+
 GUEST_TOKEN_JWT_SECRET = os.getenv("GUEST_TOKEN_JWT_SECRET")
+
+if not GUEST_TOKEN_JWT_SECRET:
+    GUEST_TOKEN_JWT_SECRET = "change-this-in-render"
+
+# =========================================================
+# GUEST TOKEN / EMBEDDING
+# =========================================================
 
 ENABLE_GUEST_TOKEN = True
 
@@ -16,9 +26,8 @@ PUBLIC_ROLE_LIKE = "Gamma"
 
 GUEST_TOKEN_JWT_AUDIENCE = "superset"
 
-
 # =========================================================
-# EMBEDDING
+# FEATURE FLAGS
 # =========================================================
 
 FEATURE_FLAGS = {
@@ -26,7 +35,6 @@ FEATURE_FLAGS = {
     "EMBEDDABLE_CHARTS": True,
     "DISABLE_EMBEDDED_SUPERSET_LOGOUT": True,
 }
-
 
 # =========================================================
 # CORS
@@ -41,9 +49,8 @@ CORS_OPTIONS = {
     ],
 }
 
-
 # =========================================================
-# SECURITY / PROXY
+# SECURITY HEADERS
 # =========================================================
 
 TALISMAN_ENABLED = False
@@ -58,11 +65,17 @@ SESSION_COOKIE_SECURE = True
 
 SESSION_COOKIE_SAMESITE = "None"
 
-
 # =========================================================
-# SUPERSET METADATA DATABASE
+# SUPSERSET METADATA DATABASE
 # =========================================================
 
 SQLALCHEMY_DATABASE_URI = "sqlite:////app/superset_home/superset.db"
 
+# Needed for Shillelagh/API connections
 PREVENT_UNSAFE_DB_CONNECTIONS = False
+
+# =========================================================
+# CONTENT SECURITY WARNING
+# =========================================================
+
+CONTENT_SECURITY_POLICY_WARNING = False
