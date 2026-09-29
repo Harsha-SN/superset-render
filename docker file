@@ -24,10 +24,6 @@ RUN /app/.venv/bin/python -c \
 RUN /app/.venv/bin/python -c \
     "import yarl; print('YARL:', yarl.__version__)"
 
-# Verify API connectivity
-RUN /app/.venv/bin/python -c \
-    "import requests; r=requests.get('https://analytics-api-82mg.onrender.com/api/product-performance/categories', timeout=30); print('API STATUS:', r.status_code); print('API CONTENT TYPE:', r.headers.get('content-type')); r.raise_for_status()"
-
 # Verify Shillelagh dialect
 RUN /app/.venv/bin/python -c \
     "from sqlalchemy import create_engine; engine=create_engine('shillelagh+safe://'); print('SHILLELAGH DIALECT:', engine.dialect)"
