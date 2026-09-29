@@ -1,3 +1,21 @@
+import sys
+from importlib.metadata import entry_points, version
+
+print("DIAG python:", sys.version, flush=True)
+
+for pkg in ["shillelagh", "python-jsonpath", "yarl", "prison", "requests-cache", "apsw"]:
+    try:
+        print("DIAG version:", pkg, version(pkg), flush=True)
+    except Exception as exc:
+        print("DIAG version FAILED:", pkg, exc, flush=True)
+
+for ep in entry_points(group="shillelagh.adapter"):
+    try:
+        ep.load()
+        print("DIAG adapter OK:", ep.name, flush=True)
+    except Exception as exc:
+        print("DIAG adapter LOAD FAILED:", ep.name, repr(exc), flush=True)
+
 from sqlalchemy import create_engine
 
 BASE = "https://analytics-api-82mg.onrender.com/api/product-performance/categories"
