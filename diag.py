@@ -1,358 +1,180 @@
-import sys
 import os
-from importlib.metadata import entry_points, version
+import sys
+import sqlite3
+import tempfile
+from importlib.metadata import version, PackageNotFoundError
 
-print("==============================================", flush=True)
-print("SHILLELAGH DIAGNOSTIC", flush=True)
-print("==============================================", flush=True)
+print("=" * 70, flush=True)
+print("SHILLELAGH / SQLITE DIAGNOSTIC", flush=True)
+print("=" * 70, flush=True)
 
-# ============================================================
-# PYTHON VERSION
-# ============================================================
+# ---------------------------------------------------------
+# 1. Basic environment
+# ---------------------------------------------------------
+print("\n[1] ENVIRONMENT", flush=True)
+print("Python:", sys.version, flush=True)
+print("HOME:", os.environ.get("HOME"), flush=True)
+print("XDG_CACHE_HOME:", os.environ.get("XDG_CACHE_HOME"), flush=True)
+print("TMPDIR:", os.environ.get("TMPDIR"), flush=True)
+print("TEMP:", os.environ.get("TEMP"), flush=True)
+print("TMP:", os.environ.get("TMP"), flush=True)
 
-print(
-    "DIAG python:",
-    sys.version,
-    flush=True
-)
-
-
-# ============================================================
-# TEST SHILLELAGH CACHE DIRECTORY
-# ============================================================
-
-CACHE_DIR = "/tmp/shillelagh-cache"
-
-try:
-
-    os.makedirs(
-        CACHE_DIR,
-        exist_ok=True
-    )
-
-    test_file = os.path.join(
-        CACHE_DIR,
-        "test.txt"
-    )
-
-    with open(
-        test_file,
-        "w"
-    ) as f:
-
-        f.write("test")
-
-    print(
-        "DIAG CACHE WRITE: OK",
-        flush=True
-    )
-
-except Exception as exc:
-
-    print(
-        "DIAG CACHE WRITE FAILED:",
-        repr(exc),
-        flush=True
-    )
-
-
-# ============================================================
-# PACKAGE VERSIONS
-# ============================================================
-
-print(
-    "\n=== PACKAGE VERSIONS ===",
-    flush=True
-)
+# ---------------------------------------------------------
+# 2. Package versions
+# ---------------------------------------------------------
+print("\n[2] PACKAGE VERSIONS", flush=True)
 
 for pkg in [
     "shillelagh",
-    "python-jsonpath",
-    "yarl",
-    "prison",
     "requests-cache",
-    "apsw"
+    "requests",
+    "python-jsonpath",
+    "sqlalchemy",
 ]:
+    try:
+        print(pkg, "=", version(pkg), flush=True)
+    except PackageNotFoundError:
+        print(pkg, "= NOT FOUND", flush=True)
+
+# ---------------------------------------------------------
+# 3. Filesystem
+# ---------------------------------------------------------
+print("\n[3] FILESYSTEM", flush=True)
+
+paths = [
+    "/tmp",
+    "/tmp/shillelagh-cache",
+    "/app",
+    "/app/superset_home",
+]
+
+for path in paths:
+    print("\nPath:", path, flush=True)
 
     try:
+        print("  exists:", os.path.exists(path), flush=True)
+        print("  is_dir:", os.path.isdir(path), flush=True)
 
-        print(
-            "DIAG version:",
-            pkg,
-            version(pkg),
-            flush=True
-        )
+        if os.path.exists(path):
+            print("  writable:", os.access(path, os.W_OK), flush=True)
+            print("  readable:", os.access(path, os.R_OK), flush=True)
 
-    except Exception as exc:
+            try:
+                print("  contents:", os.listdir(path)[:20], flush=True)
+            except Exception as e:
+                print("  list failed:", repr(e), flush=True)
 
-        print(
-            "DIAG version FAILED:",
-            pkg,
-            repr(exc),
-            flush=True
-        )
+    except Exception as e:
+        print("  ERROR:", repr(e), flush=True)
 
+# ---------------------------------------------------------
+# 4. Test normal SQLite
+# ---------------------------------------------------------
+print("\n[4] SQLITE DIRECT TEST", flush=True)
 
-# ============================================================
-# SHILLELAGH ADAPTERS
-# ============================================================
+sqlite_paths = [
+    "/tmp/test_sqlite.db",
+    "/tmp/shillelagh-cache/test_sqlite.db",
+]
 
-print(
-    "\n=== SHILLELAGH ADAPTERS ===",
-    flush=True
-)
-
-for ep in entry_points(
-    group="shillelagh.adapter"
-):
+for db_path in sqlite_paths:
+    print("\nTesting:", db_path, flush=True)
 
     try:
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
-        ep.load()
+        conn = sqlite3.connect(db_path)
+        conn.execute("CREATE TABLE IF NOT EXISTS test (id INTEGER)")
+        conn.execute("INSERT INTO test (id) VALUES (1)")
+        conn.commit()
 
-        print(
-            "DIAG adapter OK:",
-            ep.name,
-            flush=True
-        )
+        print("  SQLITE: OK", flush=True)
 
-    except Exception as exc:
+        conn.close()
 
-        print(
-            "DIAG adapter LOAD FAILED:",
-            ep.name,
-            repr(exc),
-            flush=True
-        )
+    except Exception as e:
+        print("  SQLITE: FAILED", repr(e), flush=True)
 
+# ---------------------------------------------------------
+# 5. requests-cache test
+# ---------------------------------------------------------
+print("\n[5] REQUESTS-CACHE TEST", flush=True)
 
-# ============================================================
-# ANALYTICS API
-# ============================================================
+try:
+    import requests_cache
+
+    print("requests_cache module:", requests_cache, flush=True)
+
+    cache_locations = [
+        "/tmp/shillelagh-cache/test_requests_cache",
+        "/tmp/test_requests_cache",
+    ]
+
+    for location in cache_locations:
+
+        print("\nTesting cache:", location, flush=True)
+
+        try:
+            session = requests_cache.CachedSession(
+                cache_name=location,
+                backend="sqlite",
+            )
+
+            print("  session created: OK", flush=True)
+
+            response = session.get(
+                "https://analytics-api-82mg.onrender.com/api/product-performance/categories",
+                timeout=20,
+            )
+
+            print("  HTTP status:", response.status_code, flush=True)
+            print("  content-type:", response.headers.get("content-type"), flush=True)
+
+            session.close()
+
+        except Exception as e:
+            print("  CACHE FAILED:", repr(e), flush=True)
+
+except Exception as e:
+    print("requests-cache IMPORT FAILED:", repr(e), flush=True)
+
+# ---------------------------------------------------------
+# 6. GenericJSONAPI
+# ---------------------------------------------------------
+print("\n[6] GENERIC JSON API", flush=True)
 
 BASE = (
     "https://analytics-api-82mg.onrender.com"
     "/api/product-performance/categories"
 )
 
-print(
-    "\n=== ANALYTICS API TEST ===",
-    flush=True
-)
-
-print(
-    "DIAG API URL:",
-    BASE,
-    flush=True
-)
-
-
-# ============================================================
-# DIRECT HTTP TEST
-# ============================================================
-
 try:
+    from shillelagh.adapters.api.generic_json import GenericJSONAPI
 
-    import requests
+    print("GenericJSONAPI import: OK", flush=True)
 
-    response = requests.get(
-        BASE,
-        timeout=20
-    )
-
-    print(
-        "DIAG HTTP STATUS:",
-        response.status_code,
-        flush=True
-    )
-
-    print(
-        "DIAG CONTENT TYPE:",
-        response.headers.get(
-            "content-type"
-        ),
-        flush=True
-    )
-
-    print(
-        "DIAG RESPONSE:",
-        response.text[:1000],
-        flush=True
-    )
-
-except Exception as exc:
-
-    print(
-        "DIAG DIRECT API FAILED:",
-        repr(exc),
-        flush=True
-    )
-
-
-# ============================================================
-# GENERIC JSON API
-# ============================================================
-
-print(
-    "\n=== GENERIC JSON API ===",
-    flush=True
-)
-
-try:
-
-    from shillelagh.adapters.api.generic_json import (
-        GenericJSONAPI
-    )
-
-    print(
-        "DIAG GenericJSONAPI import: OK",
-        flush=True
-    )
-
-except Exception as exc:
-
-    print(
-        "DIAG GenericJSONAPI IMPORT FAILED:",
-        repr(exc),
-        flush=True
-    )
-
-    GenericJSONAPI = None
-
-
-# ============================================================
-# FAST SUPPORT CHECK
-# ============================================================
-
-if GenericJSONAPI:
+    print("\nTesting supports(fast=True)...", flush=True)
 
     try:
+        result = GenericJSONAPI.supports(BASE, fast=True)
+        print("RESULT:", repr(result), flush=True)
+    except Exception as e:
+        print("FAST FAILED:", repr(e), flush=True)
 
-        result_fast = GenericJSONAPI.supports(
-            BASE,
-            fast=True
-        )
-
-        print(
-            "DIAG supports fast=True:",
-            result_fast,
-            flush=True
-        )
-
-    except Exception as exc:
-
-        print(
-            "DIAG supports fast=True FAILED:",
-            repr(exc),
-            flush=True
-        )
-
-
-# ============================================================
-# SLOW SUPPORT CHECK
-# ============================================================
-
-if GenericJSONAPI:
+    print("\nTesting supports(fast=False)...", flush=True)
 
     try:
+        result = GenericJSONAPI.supports(BASE, fast=False)
+        print("RESULT:", repr(result), flush=True)
+    except Exception as e:
+        print("SLOW FAILED:", repr(e), flush=True)
 
-        result_slow = GenericJSONAPI.supports(
-            BASE,
-            fast=False
-        )
+except Exception as e:
+    print("GenericJSONAPI IMPORT FAILED:", repr(e), flush=True)
 
-        print(
-            "DIAG supports fast=False:",
-            result_slow,
-            flush=True
-        )
-
-    except Exception as exc:
-
-        print(
-            "DIAG supports fast=False FAILED:",
-            repr(exc),
-            flush=True
-        )
-
-
-# ============================================================
-# SHILLELAGH SQL TEST
-# ============================================================
-
-print(
-    "\n=== SHILLELAGH SQL TEST ===",
-    flush=True
-)
-
-candidates = [
-
-    BASE,
-
-    BASE + "#$",
-
-    BASE + "#$[*]",
-
-    BASE + "#$.data[*]"
-]
-
-
-try:
-
-    from sqlalchemy import create_engine
-
-    for url in candidates:
-
-        try:
-
-            with create_engine(
-                "shillelagh://"
-            ).connect() as conn:
-
-                rows = conn.exec_driver_sql(
-                    f'SELECT * FROM "{url}" LIMIT 2'
-                ).fetchall()
-
-            print(
-                "DIAG query OK:",
-                url,
-                rows,
-                flush=True
-            )
-
-        except Exception as exc:
-
-            print(
-                "DIAG query FAILED:",
-                url,
-                repr(exc),
-                flush=True
-            )
-
-except Exception as exc:
-
-    print(
-        "DIAG SQL ENGINE FAILED:",
-        repr(exc),
-        flush=True
-    )
-
-
-# ============================================================
-# FINISHED
-# ============================================================
-
-print(
-    "\n==============================================",
-    flush=True
-)
-
-print(
-    "DIAGNOSTIC COMPLETE",
-    flush=True
-)
-
-print(
-    "==============================================",
-    flush=True
-)
+# ---------------------------------------------------------
+# 7. Finish
+# ---------------------------------------------------------
+print("\n" + "=" * 70, flush=True)
+print("DIAGNOSTIC COMPLETE", flush=True)
+print("=" * 70, flush=True)
