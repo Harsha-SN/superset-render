@@ -2,9 +2,11 @@ FROM apache/superset:6.1.0
 
 USER root
 
-# Install Shillelagh Generic JSON API
-RUN uv pip install --python /app/.venv/bin/python --no-cache \
-    "shillelagh[genericjsonapi]==1.4.5"
+# Install Shillelagh Generic JSON API — force reinstall so the extra's
+# dependencies (prison, python-jsonpath, yarl) actually get pulled in,
+# since the base image already ships shillelagh==1.4.5
+RUN uv pip install --python /app/.venv/bin/python --no-cache --force-reinstall \
+    "shillelagh[genericjsonapi]==1.4.5" "prison>=0.2.1" "python-jsonpath>=0.10.3" "yarl>=1.8.1"
 
 # Verify Shillelagh
 RUN /app/.venv/bin/python -c \
