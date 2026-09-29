@@ -15,35 +15,16 @@ RUN uv pip install --python /app/.venv/bin/python --no-cache \
     "sqlalchemy==1.4.54"
 
 # Create writable directories for Shillelagh/cache
-RUN mkdir -p /tmp/shillelagh-cache \
-    && mkdir -p /tmp/shillelagh-home \
-    && chmod -R 777 /tmp/shillelagh-cache \
-    && chmod -R 777 /tmp/shillelagh-home
-
-# Verify Shillelagh
-RUN /app/.venv/bin/python -c \
-    "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
-
-# Verify Generic JSON API adapter
-RUN /app/.venv/bin/python -c \
-    "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER: OK')"
-
-# Verify JSONPath
-RUN /app/.venv/bin/python -c \
-    "import jsonpath; print('JSONPATH: OK')"
-
-# Verify Requests Cache - FIXED
-RUN /app/.venv/bin/python -c \
-    "from importlib.metadata import version; import requests_cache; print('REQUESTS CACHE:', version('requests-cache'))"
+RUN mkdir -p /app/superset_home \
+    && chmod -R 777 /app/superset_home
 
 # Runtime environment
-ENV HOME=/tmp
-ENV XDG_CACHE_HOME=/tmp
-ENV SHILLELAGH_CACHE_DIR=/tmp/shillelagh-cache
+ENV HOME=/app/superset_home
+ENV XDG_CACHE_HOME=/app/superset_home
+ENV SHILLELAGH_CACHE_DIR=/app/superset_home
 
 # Superset configuration
 COPY superset_config.py /app/pythonpath/superset_config.py
-COPY diag.py /app/diag.py
 
 USER superset
 
@@ -55,4 +36,4 @@ ENV SERVER_THREADS_AMOUNT=2
 EXPOSE 10000
 
 # Start Superset
-CMD ["sh", "-c", "/app/.venv/bin/python /app/diag.py"]
+CMD ["sh", "-c", "superset db upgrade && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password \"$ADMIN_PASSWORD\" || true; superset init; exec gunicorn -w 1 -k gthread --threads 2 -b 0.0.0.0:${PORT:-10000} 'superset.app:create_app()'"]
