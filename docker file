@@ -1,35 +1,33 @@
-FROM apache/superset:6.1.0
+import sys
+from importlib.metadata import entry_points, version
 
-USER root
+print("DIAG python:", sys.version, flush=True)
 
-RUN uv pip install --python /app/.venv/bin/python --no-cache --force-reinstall \
-    "shillelagh[genericjsonapi]==1.4.5" "prison>=0.2.1" "python-jsonpath>=0.10.3" "yarl>=1.8.1"
+for pkg in ["shillelagh", "python-jsonpath", "yarl", "prison", "requests-cache", "apsw"]:
+    try:
+        print("DIAG version:", pkg, version(pkg), flush=True)
+    except Exception as exc:
+        print("DIAG version FAILED:", pkg, exc, flush=True)
 
-RUN uv pip install --python /app/.venv/bin/python --no-cache \
-    "sqlalchemy==1.4.54"
+for ep in entry_points(group="shillelagh.adapter"):
+    try:
+        ep.load()
+        print("DIAG adapter OK:", ep.name, flush=True)
+    except Exception as exc:
+        print("DIAG adapter LOAD FAILED:", ep.name, repr(exc), flush=True)
 
-RUN /app/.venv/bin/python -c \
-    "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
+from sqlalchemy import create_engine
 
-RUN /app/.venv/bin/python -c \
-    "from shillelagh.adapters.api.generic_json import GenericJSONAPI; print('GENERIC JSON API ADAPTER: OK')"
-
-RUN /app/.venv/bin/python -c \
-    "import jsonpath; print('JSONPATH: OK')"
-
-RUN /app/.venv/bin/python -c \
-    "import yarl; print('YARL:', yarl.__version__)"
-
-COPY superset_config.py /app/pythonpath/superset_config.py
-COPY diag.py /app/diag.py
-
-USER superset
-
-ENV SUPERSET_CONFIG_PATH=/app/pythonpath/superset_config.py
-ENV SUPERSET_LOAD_EXAMPLES=no
-ENV SUPERSET_WEBSERVER_WORKERS=1
-ENV SERVER_THREADS_AMOUNT=2
-
-EXPOSE 10000
-
-CMD ["sh", "-c", "/app/.venv/bin/python /app/diag.py; superset db upgrade && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password \"$ADMIN_PASSWORD\" || true; superset init; gunicorn -w 1 -k gthread --threads 2 -b 0.0.0.0:${PORT:-10000} 'superset.app:create_app()'"]
+BASE = "https://analytics-api-82mg.onrender.com/api/product-performance/categories"
+candidates = [
+    BASE,
+    BASE + "#$",
+    BASE + "#$[*]",
+]
+for url in candidates:
+    try:
+        with create_engine("shillelagh://").connect() as conn:
+            rows = conn.exec_driver_sql(f'SELECT * FROM "{url}" LIMIT 2').fetchall()
+        print("DIAG query OK:", url, rows, flush=True)
+    except Exception as exc:
+        print("DIAG query FAILED:", url, repr(exc), flush=True)
