@@ -3,7 +3,7 @@ from importlib.metadata import entry_points, version
 
 print("DIAG python:", sys.version, flush=True)
 
-for pkg in ["shillelagh", "python-jsonpath", "yarl", "requests-cache", "apsw"]:
+for pkg in ["shillelagh", "python-jsonpath", "yarl", "prison", "requests-cache", "apsw"]:
     try:
         print("DIAG version:", pkg, version(pkg), flush=True)
     except Exception as exc:
