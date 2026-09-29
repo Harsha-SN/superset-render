@@ -11,9 +11,6 @@ RUN uv pip install --python /app/.venv/bin/python --no-cache --force-reinstall \
 RUN uv pip install --python /app/.venv/bin/python --no-cache \
     "sqlalchemy==1.4.54"
 
-RUN mkdir -p /tmp/shillelagh-cache \
-    && chmod 777 /tmp/shillelagh-cache
-
 RUN /app/.venv/bin/python -c \
     "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
 
@@ -25,6 +22,13 @@ RUN /app/.venv/bin/python -c \
 
 RUN /app/.venv/bin/python -c \
     "import yarl; print('YARL:', yarl.__version__)"
+
+# NEW
+RUN mkdir -p /tmp/shillelagh-cache \
+    && chmod 777 /tmp/shillelagh-cache
+
+ENV HOME=/tmp
+ENV XDG_CACHE_HOME=/tmp
 
 COPY superset_config.py /app/pythonpath/superset_config.py
 COPY diag.py /app/diag.py
