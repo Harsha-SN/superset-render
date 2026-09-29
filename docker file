@@ -25,8 +25,7 @@ ENV SHILLELAGH_CACHE_DIR=/app/superset_home
 
 # Superset configuration
 COPY superset_config.py /app/pythonpath/superset_config.py
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+COPY diag.py /app/diag.py
 
 USER superset
 
@@ -38,4 +37,4 @@ ENV SERVER_THREADS_AMOUNT=2
 EXPOSE 10000
 
 # Start Superset
-CMD ["/app/start.sh"]
+CMD ["/app/.venv/bin/python", "/app/diag.py"]
