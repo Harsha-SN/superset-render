@@ -3,9 +3,10 @@ FROM apache/superset:6.1.0
 USER root
 
 # ---------------------------------------------------------
-# Install Shillelagh Generic JSON API adapter
+# Install Shillelagh + Generic JSON API dependencies
 # ---------------------------------------------------------
 RUN uv pip install --python /app/.venv/bin/python --no-cache --force-reinstall \
+    "shillelagh==1.4.5" \
     "shillelagh[genericjsonapi]==1.4.5" \
     "prison>=0.2.1" \
     "python-jsonpath>=0.10.3" \
@@ -16,7 +17,18 @@ RUN uv pip install --python /app/.venv/bin/python --no-cache \
     "sqlalchemy==1.4.54"
 
 # ---------------------------------------------------------
-# Verify installation during BUILD
+# Create writable temporary directories
+# ---------------------------------------------------------
+RUN mkdir -p /tmp/shillelagh-cache \
+    && mkdir -p /tmp/shillelagh-home \
+    && chmod -R 777 /tmp/shillelagh-cache \
+    && chmod -R 777 /tmp/shillelagh-home
+
+ENV HOME=/tmp/shillelagh-home
+ENV XDG_CACHE_HOME=/tmp/shillelagh-cache
+
+# ---------------------------------------------------------
+# Verify installation during Docker build
 # ---------------------------------------------------------
 RUN /app/.venv/bin/python -c \
     "import shillelagh; print('SHILLELAGH VERSION:', shillelagh.__version__)"
@@ -28,21 +40,10 @@ RUN /app/.venv/bin/python -c \
     "import jsonpath; print('JSONPATH: OK')"
 
 RUN /app/.venv/bin/python -c \
+    "import requests_cache; print('REQUESTS CACHE:', requests_cache.__version__)"
+
+RUN /app/.venv/bin/python -c \
     "import yarl; print('YARL:', yarl.__version__)"
-
-# ---------------------------------------------------------
-# Writable temporary directories
-# ---------------------------------------------------------
-RUN mkdir -p /tmp/shillelagh-cache \
-    && chmod 777 /tmp/shillelagh-cache \
-    && mkdir -p /tmp/shillelagh-db \
-    && chmod 777 /tmp/shillelagh-db
-
-ENV HOME=/tmp
-ENV XDG_CACHE_HOME=/tmp
-ENV TMPDIR=/tmp
-ENV TEMP=/tmp
-ENV TMP=/tmp
 
 # ---------------------------------------------------------
 # Superset configuration
@@ -56,6 +57,7 @@ ENV SUPERSET_LOAD_EXAMPLES=no
 ENV SUPERSET_WEBSERVER_WORKERS=1
 ENV SERVER_THREADS_AMOUNT=2
 
+# Render provides PORT automatically
 EXPOSE 10000
 
 # ---------------------------------------------------------
