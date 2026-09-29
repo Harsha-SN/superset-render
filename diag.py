@@ -31,3 +31,14 @@ for url in candidates:
         print("DIAG query OK:", url, rows, flush=True)
     except Exception as exc:
         print("DIAG query FAILED:", url, repr(exc), flush=True)
+
+try:
+    from shillelagh.adapters.api.generic_json import GenericJSONAPI
+    result_fast = GenericJSONAPI.supports(BASE, fast=True)
+    print("DIAG supports fast=True:", result_fast, flush=True)
+    result_slow = GenericJSONAPI.supports(BASE, fast=False)
+    print("DIAG supports fast=False:", result_slow, flush=True)
+except Exception as exc:
+    import traceback
+    print("DIAG supports() RAISED:", repr(exc), flush=True)
+    traceback.print_exc()
