@@ -44,6 +44,7 @@ CORS_OPTIONS = {
     "supports_credentials": True,
 
     "origins": [
+        # Replace this with your REAL Streamlit URL
         "https://YOUR-STREAMLIT-APP.streamlit.app"
     ],
 }
@@ -91,3 +92,21 @@ SQLALCHEMY_DATABASE_URI = (
 # ============================================================
 
 PREVENT_UNSAFE_DB_CONNECTIONS = False
+
+
+# ============================================================
+# SHILLELAGH
+# ============================================================
+
+# Allow Generic JSON APIs through Shillelagh
+SHILLELAGH_ALLOW_GENERIC_JSON = True
+
+
+# ============================================================
+# ALLOWED API URLS
+# ============================================================
+
+# Allow your Render Flask Analytics API
+ALLOWED_USER_DEFINED_URLS = [
+    r"^https://analytics-api-82mg\.onrender\.com/.*$"
+]
