@@ -89,25 +89,3 @@ SQLALCHEMY_DATABASE_URI = (
 # ============================================================
 
 PREVENT_UNSAFE_DB_CONNECTIONS = False
-
-
-# ============================================================
-# SHILLELAGH / GENERIC JSON
-# ============================================================
-
-SHILLELAGH_ALLOW_GENERIC_JSON = True
-
-SHILLELAGH_ADAPTERS = {
-    "genericjsonapi":
-        "shillelagh.adapters.api.generic_json.GenericJsonAPI"
-}
-
-
-# ============================================================
-# ALLOWED API URLS
-# ============================================================
-
-ALLOWED_USER_DEFINED_URLS = [
-    r"https://analytics-api-82mg\.onrender\.com/.*",
-    r"https://jsonplaceholder\.typicode\.com/.*",
-]
