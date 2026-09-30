@@ -10,7 +10,7 @@ RUN uv pip install --python /app/.venv/bin/python --no-cache --force-reinstall \
     "python-jsonpath>=0.10.3" \
     "yarl>=1.8.1"
 
-# Keep SQLAlchemy compatible with the working local environment
+# Keep SQLAlchemy compatible
 RUN uv pip install --python /app/.venv/bin/python --no-cache \
     "sqlalchemy==1.4.54"
 
@@ -27,17 +27,15 @@ ENV SHILLELAGH_CACHE_DIR=/app/superset_home
 # Superset configuration
 COPY --chown=superset:superset superset_config.py /app/pythonpath/superset_config.py
 
-# Render uses PORT; Superset's server uses SUPERSET_PORT
+USER superset
+
 ENV SUPERSET_CONFIG_PATH=/app/pythonpath/superset_config.py
 ENV SUPERSET_LOAD_EXAMPLES=no
 ENV SUPERSET_WEBSERVER_WORKERS=1
-ENV SERVER_THREADS_AMOUNT=2
+ENV SERVER_THREADS_AMOUNT=1
 ENV SUPERSET_BIND_ADDRESS=0.0.0.0
 ENV SUPERSET_PORT=10000
 
-USER superset
-
 EXPOSE 10000
 
-# Use Superset's official server entrypoint
 CMD ["/usr/bin/run-server.sh"]
