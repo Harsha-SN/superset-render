@@ -4,7 +4,7 @@ USER root
 
 
 # ============================================================
-# SHILLELAGH + GENERIC JSON
+# SHILLELAGH + GENERIC JSON API
 # ============================================================
 
 RUN uv pip install \
@@ -28,11 +28,34 @@ RUN uv pip install \
 
 
 # ============================================================
+# VERIFY SHILLELAGH INSTALLATION
+# ============================================================
+
+RUN /app/.venv/bin/python -c "\
+import shillelagh; \
+print('Shillelagh version:', shillelagh.__version__); \
+from shillelagh.backends.apsw.db import connect; \
+print('Shillelagh APSW backend: OK'); \
+import jsonpath_ng; \
+print('jsonpath-ng: OK'); \
+"
+
+
+# ============================================================
 # SUPERSET HOME
 # ============================================================
 
-RUN mkdir -p /app/superset_home \
-    && chown -R superset:superset /app/superset_home \
+RUN mkdir -p \
+    /app/superset_home \
+    /app/superset_home/tmp \
+    /app/superset_home/shillelagh
+
+
+# ============================================================
+# PERMISSIONS
+# ============================================================
+
+RUN chown -R superset:superset /app/superset_home \
     && chmod -R 777 /app/superset_home
 
 
@@ -44,16 +67,7 @@ ENV HOME=/app/superset_home
 
 ENV XDG_CACHE_HOME=/app/superset_home
 
-ENV SHILLELAGH_CACHE_DIR=/app/superset_home
-
-
-# ============================================================
-# SQLITE TEMP DIRECTORY
-# ============================================================
-
-RUN mkdir -p /app/superset_home/tmp \
-    && chown -R superset:superset /app/superset_home/tmp \
-    && chmod -R 777 /app/superset_home/tmp
+ENV SHILLELAGH_CACHE_DIR=/app/superset_home/shillelagh
 
 ENV SQLITE_TMPDIR=/app/superset_home/tmp
 
