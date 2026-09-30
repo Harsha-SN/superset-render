@@ -5,9 +5,7 @@ import os
 # SECURITY
 # ============================================================
 
-SECRET_KEY = os.getenv(
-    "SUPERSET_SECRET_KEY"
-)
+SECRET_KEY = os.getenv("SUPERSET_SECRET_KEY")
 
 GUEST_TOKEN_JWT_SECRET = os.getenv(
     "GUEST_TOKEN_JWT_SECRET"
@@ -44,7 +42,6 @@ CORS_OPTIONS = {
     "supports_credentials": True,
 
     "origins": [
-        # Replace this with your REAL Streamlit URL
         "https://YOUR-STREAMLIT-APP.streamlit.app"
     ],
 }
@@ -95,18 +92,22 @@ PREVENT_UNSAFE_DB_CONNECTIONS = False
 
 
 # ============================================================
-# SHILLELAGH
+# SHILLELAGH / GENERIC JSON
 # ============================================================
 
-# Allow Generic JSON APIs through Shillelagh
 SHILLELAGH_ALLOW_GENERIC_JSON = True
+
+SHILLELAGH_ADAPTERS = {
+    "genericjsonapi":
+        "shillelagh.adapters.api.generic_json.GenericJsonAPI"
+}
 
 
 # ============================================================
 # ALLOWED API URLS
 # ============================================================
 
-# Allow your Render Flask Analytics API
 ALLOWED_USER_DEFINED_URLS = [
-    r"^https://analytics-api-82mg\.onrender\.com/.*$"
+    r"https://analytics-api-82mg\.onrender\.com/.*",
+    r"https://jsonplaceholder\.typicode\.com/.*",
 ]
