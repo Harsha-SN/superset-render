@@ -6,18 +6,16 @@ import os
 # ============================================================
 
 SECRET_KEY = os.getenv(
-    "SUPERSET_SECRET_KEY",
-    "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET"
+    "SUPERSET_SECRET_KEY"
 )
 
 GUEST_TOKEN_JWT_SECRET = os.getenv(
-    "GUEST_TOKEN_JWT_SECRET",
-    "CHANGE_THIS_TO_ANOTHER_LONG_RANDOM_SECRET"
+    "GUEST_TOKEN_JWT_SECRET"
 )
 
 
 # ============================================================
-# GUEST TOKEN / EMBEDDING
+# GUEST TOKEN
 # ============================================================
 
 ENABLE_GUEST_TOKEN = True
@@ -28,6 +26,10 @@ PUBLIC_ROLE_LIKE = "Gamma"
 
 GUEST_TOKEN_JWT_AUDIENCE = "superset"
 
+
+# ============================================================
+# EMBEDDING
+# ============================================================
 
 FEATURE_FLAGS = {
     "EMBEDDED_SUPERSET": True,
@@ -44,26 +46,10 @@ ENABLE_CORS = True
 
 CORS_OPTIONS = {
     "supports_credentials": True,
-
     "origins": [
-        "https://YOUR-STREAMLIT-APP.streamlit.app",
+        "https://YOUR-STREAMLIT-APP.streamlit.app"
     ],
 }
-
-
-# ============================================================
-# EMBEDDING / IFRAME
-# ============================================================
-
-HTTP_HEADERS = {
-    "X-Frame-Options": "ALLOWALL",
-}
-
-# If your Streamlit app is the only embedding application,
-# replace this with your actual Streamlit URL.
-FRAME_ANCESTORS = [
-    "https://YOUR-STREAMLIT-APP.streamlit.app",
-]
 
 
 # ============================================================
@@ -94,7 +80,7 @@ SESSION_COOKIE_SAMESITE = "None"
 
 
 # ============================================================
-# SUPERSET METADATA DATABASE
+# SUPERSET METADATA
 # ============================================================
 
 SQLALCHEMY_DATABASE_URI = (
@@ -104,7 +90,7 @@ SQLALCHEMY_DATABASE_URI = (
 
 
 # ============================================================
-# DATABASE CONNECTION SECURITY
+# DATABASE SECURITY
 # ============================================================
 
 PREVENT_UNSAFE_DB_CONNECTIONS = False
@@ -114,36 +100,16 @@ PREVENT_UNSAFE_DB_CONNECTIONS = False
 # SHILLELAGH
 # ============================================================
 
-# Allow Shillelagh generic JSON API functionality.
 SHILLELAGH_ALLOW_GENERIC_JSON = True
 
 
 # ============================================================
-# SHILLELAGH API URL ALLOWLIST
+# API URL ALLOWLIST
 # ============================================================
 
 ALLOWED_USER_DEFINED_URLS = [
     r"https://analytics-api-82mg\.onrender\.com/.*"
 ]
-
-
-# ============================================================
-# SHILLELAGH ADAPTERS
-# ============================================================
-
-SHILLELAGH_ADAPTERS = {
-    "genericjsonapi":
-        "shillelagh.adapters.api.generic_json.GenericJsonAPI"
-}
-
-
-# ============================================================
-# SHILLELAGH CACHE / TEMP DIRECTORY
-# ============================================================
-
-SHILLELAGH_CACHE_DIR = "/app/superset_home"
-
-SQLITE_TMPDIR = "/app/superset_home/tmp"
 
 
 # ============================================================
@@ -154,10 +120,3 @@ CACHE_CONFIG = {
     "CACHE_TYPE": "SimpleCache",
     "CACHE_DEFAULT_TIMEOUT": 300,
 }
-
-
-# ============================================================
-# EXAMPLES
-# ============================================================
-
-SUPERSET_LOAD_EXAMPLES = False
