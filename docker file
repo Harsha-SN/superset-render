@@ -2,7 +2,7 @@ FROM apache/superset:6.1.0
 
 USER root
 
-# 1. FIXED: Correct Shillelagh extras tag [genericjson] instead of [genericjsonapi]
+# Install Shillelagh with the correct [genericjson] adapter framework extensions
 RUN uv pip install --python /app/.venv/bin/python --no-cache --force-reinstall \
     "shillelagh[genericjson]==1.4.5" \
     "prison>=0.2.1" \
@@ -21,10 +21,9 @@ RUN mkdir -p /app/superset_home \
 # Runtime/cache environment
 ENV HOME=/app/superset_home
 ENV XDG_CACHE_HOME=/app/superset_home
-# Ensure Shillelagh writes its SQLite caching structures directly to the home environment safely
 ENV SHILLELAGH_CACHE_DIR=/app/superset_home
 
-# Fix any hidden venv folder permission variations before dropping privileges
+# Fix venv ownership to prevent runtime read/write import bugs
 RUN chown -R superset:superset /app/.venv
 
 # Superset configuration
