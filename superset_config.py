@@ -20,7 +20,7 @@ ENABLE_CORS = True
 CORS_OPTIONS = {
     "supports_credentials": True,
     "origins": [
-        "https://data-analytics-ui.streamlit.app"
+        "https://streamlit.app"
     ],
 }
 
@@ -39,3 +39,18 @@ SQLALCHEMY_DATABASE_URI = (
 )
 
 PREVENT_UNSAFE_DB_CONNECTIONS = False
+
+# =======================================================
+# CRITICAL FIX: EXPLICIT SHILLELAGH DATA & DOMAIN SECURITY
+# =======================================================
+SHILLELAGH_ALLOW_GENERIC_JSON = True
+
+# Whitelist your Flask API explicitly so the driver manager doesn't block it
+ALLOWED_USER_DEFINED_URLS = [
+    r"https://analytics-api-82mg\.onrender\.com/.*"
+]
+
+# Map out the underlying generic JSON handling schema driver
+SHILLELAGH_ADAPTERS = {
+    "genericjsonapi": "shillelagh.adapters.api.generic_json.GenericJsonAPI"
+}
