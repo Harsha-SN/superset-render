@@ -13,7 +13,7 @@ GUEST_TOKEN_JWT_SECRET = os.getenv(
 
 
 # ============================================================
-# GUEST TOKEN / EMBEDDING
+# EMBEDDING
 # ============================================================
 
 ENABLE_GUEST_TOKEN = True
@@ -66,7 +66,7 @@ WTF_CSRF_ENABLED = False
 
 
 # ============================================================
-# SESSION COOKIE
+# SESSION
 # ============================================================
 
 SESSION_COOKIE_SECURE = True
@@ -75,7 +75,7 @@ SESSION_COOKIE_SAMESITE = "None"
 
 
 # ============================================================
-# SUPERSET METADATA DATABASE
+# METADATA DATABASE
 # ============================================================
 
 SQLALCHEMY_DATABASE_URI = (
@@ -89,3 +89,19 @@ SQLALCHEMY_DATABASE_URI = (
 # ============================================================
 
 PREVENT_UNSAFE_DB_CONNECTIONS = False
+
+
+# ============================================================
+# SHILLELAGH
+# ============================================================
+
+SHILLELAGH_ALLOW_GENERIC_JSON = True
+
+ALLOWED_USER_DEFINED_URLS = [
+    r"https://analytics-api-82mg\.onrender\.com/.*"
+]
+
+SHILLELAGH_ADAPTERS = {
+    "genericjsonapi":
+        "shillelagh.adapters.api.generic_json.GenericJsonAPI"
+}
