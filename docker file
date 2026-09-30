@@ -2,26 +2,31 @@ FROM apache/superset:6.1.0
 
 USER root
 
+
 # ============================================================
-# SHILLELAGH + GENERIC JSON
+# SHILLELAGH + GENERIC JSON API
 # ============================================================
 
 RUN uv pip install \
     --python /app/.venv/bin/python \
     --no-cache \
+    --force-reinstall \
     "shillelagh[genericjsonapi]==1.4.4" \
     "jsonpath-ng>=1.6.1" \
-    "prison>=0.2.1" \
-    "yarl>=1.8.1"
+    "yarl>=1.8.1" \
+    "prison>=0.2.1"
 
 
 # ============================================================
-# SUPERSET HOME
+# SHILLELAGH CACHE / TEMP
 # ============================================================
 
-RUN mkdir -p /app/superset_home/tmp \
-    && chown -R superset:superset /app/superset_home \
-    && chmod -R 777 /app/superset_home
+RUN mkdir -p /app/superset_home \
+    /app/superset_home/tmp
+
+RUN chown -R superset:superset /app/superset_home
+
+RUN chmod -R 777 /app/superset_home
 
 ENV HOME=/app/superset_home
 ENV XDG_CACHE_HOME=/app/superset_home
@@ -30,12 +35,19 @@ ENV SQLITE_TMPDIR=/app/superset_home/tmp
 
 
 # ============================================================
-# CONFIG
+# SUPERSET CONFIG
 # ============================================================
 
 COPY --chown=superset:superset \
     superset_config.py \
     /app/pythonpath/superset_config.py
+
+
+# ============================================================
+# VENV PERMISSIONS
+# ============================================================
+
+RUN chown -R superset:superset /app/.venv
 
 
 # ============================================================
@@ -47,7 +59,7 @@ USER superset
 ENV SUPERSET_CONFIG_PATH=/app/pythonpath/superset_config.py
 ENV SUPERSET_LOAD_EXAMPLES=no
 ENV SUPERSET_WEBSERVER_WORKERS=1
-ENV SERVER_THREADS_AMOUNT=1
+ENV SERVER_THREADS_AMOUNT=2
 
 
 # ============================================================
@@ -56,8 +68,9 @@ ENV SERVER_THREADS_AMOUNT=1
 
 EXPOSE 10000
 
+
 # ============================================================
 # START SUPERSET
 # ============================================================
 
-CMD ["sh", "-c", "superset db upgrade && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password \"$ADMIN_PASSWORD\" || true; superset init; exec gunicorn -w 1 -k gthread --threads 1 -b 0.0.0.0:${PORT:-10000} 'superset.app:create_app()'"]
+CMD ["sh", "-c", "superset db upgrade && superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@example.com --password \"$ADMIN_PASSWORD\" || true; superset init; exec gunicorn -w 1 -k gthread --threads 2 -b 0.0.0.0:${PORT:-10000} 'superset.app:create_app()'"]
